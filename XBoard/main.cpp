@@ -1,10 +1,19 @@
 #include "tray_icon.h"
-#include <iostream>
 #include <Windows.h>
 
 int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow)
 {
+	int result = 0;
+	MSG msg{};
+
 	start_tray_icon();
-	MessageBox(0, TEXT("Hello, World!"), TEXT("Message"), 0);
-	return 0;
+	
+	while (GetMessageW(&msg, nullptr, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessageW(&msg);
+	}
+
+	stop_tray_icon();
+	return result;
 }
