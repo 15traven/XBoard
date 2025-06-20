@@ -18,6 +18,22 @@ namespace
 
 	NOTIFYICONDATAW tray_icon_data;
 	bool tray_icon_created = false;
+
+	HMENU h_menu = nullptr;
+	HMENU h_sub_menu = nullptr;
+	POINT tray_icon_click_point;
+}
+
+void handle_tray_command(HWND window, const WPARAM command_id, LPARAM lParam)
+{
+	switch (command_id)
+	{
+	case ID_EXIT_MENU_COMMAND:
+		if (h_menu)
+			DestroyMenu(h_menu);
+		DestroyWindow(window);
+		break;
+	}
 }
 
 LRESULT __stdcall tray_icon_window_proc(HWND window, UINT message, WPARAM wParam, LPARAM lParam)
@@ -48,6 +64,35 @@ LRESULT __stdcall tray_icon_window_proc(HWND window, UINT message, WPARAM wParam
 			tray_icon_created = Shell_NotifyIcon(NIM_ADD, &tray_icon_data) == TRUE;
 		}
 		break;
+	case WM_COMMAND:
+		handle_tray_command(window, wParam, lParam);
+		break;
+	default:
+		if (message == wm_icon_notify)
+		{
+			switch (lParam)
+			{
+			case WM_LBUTTONUP:
+			case WM_RBUTTONUP:
+			case WM_CONTEXTMENU:
+				if (!h_menu)
+					h_menu = LoadMenu(reinterpret_cast<HINSTANCE>(&__ImageBase), MAKEINTRESOURCE(ID_TRAY_MENU));
+
+				if (!h_sub_menu)
+					h_sub_menu = GetSubMenu(h_menu, 0);
+
+				POINT mouse_pointer;
+				GetCursorPos(&mouse_pointer);
+				SetForegroundWindow(window);
+				TrackPopupMenu(h_sub_menu, TPM_CENTERALIGN | TPM_BOTTOMALIGN, mouse_pointer.x, mouse_pointer.y, 0, window, nullptr);
+				break;
+			}
+		}
+		else if (message == wm_taskbar_restart)
+		{
+			tray_icon_created = Shell_NotifyIcon(NIM_ADD, &tray_icon_data) == TRUE;
+			break;
+		}
 	}
 	return DefWindowProc(window, message, wParam, lParam);
 }
